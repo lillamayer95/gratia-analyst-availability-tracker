@@ -1,0 +1,10 @@
+.cal-availability {
+  max-width: 800px;
+  margin: 0 auto;
+  padding: 20px;
+}
+
+.cal-availability h2 {
+  color: #333;
+  margin-bottom: 20px;
+}
