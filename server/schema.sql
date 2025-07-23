@@ -6,12 +6,13 @@ CREATE EXTENSION IF NOT EXISTS "uuid-ossp";
 -- Create dedicated schema for the application
 CREATE SCHEMA IF NOT EXISTS gratia;
 
--- Create call_user_availability table for storing managed user creation data
-CREATE TABLE IF NOT EXISTS gratia.call_user_availability (
+-- Create cal_user_availability table for storing managed user creation data
+CREATE TABLE IF NOT EXISTS gratia.cal_user_availability (
     id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
     "userId" INTEGER UNIQUE NOT NULL,
     "refreshToken" TEXT NOT NULL,
     "accessToken" TEXT NOT NULL,
+    "availabilityLastUpdated" TIMESTAMP,
     "createdAt" TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     "updatedAt" TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
@@ -25,11 +26,11 @@ BEGIN
 END;
 $$ language 'plpgsql';
 
--- Create trigger for call_user_availability
-CREATE TRIGGER update_call_user_availability_updated_at 
-    BEFORE UPDATE ON gratia.call_user_availability
+-- Create trigger for cal_user_availability
+CREATE TRIGGER update_cal_user_availability_updated_at 
+    BEFORE UPDATE ON gratia.cal_user_availability
     FOR EACH ROW 
     EXECUTE FUNCTION update_updated_at_column();
 
--- Create indexes for call_user_availability
-CREATE INDEX IF NOT EXISTS idx_call_user_availability_userId ON gratia.call_user_availability("userId");
+-- Create indexes for cal_user_availability
+CREATE INDEX IF NOT EXISTS idx_cal_user_availability_userId ON gratia.cal_user_availability("userId");

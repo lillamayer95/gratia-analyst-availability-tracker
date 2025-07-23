@@ -1,0 +1,31 @@
+.user-info {
+  background: #f5f5f5;
+  padding: 20px;
+  border-radius: 8px;
+  margin-bottom: 30px;
+}
+
+.user-info h3 {
+  margin: 0 0 10px 0;
+  color: #333;
+}
+
+.user-info p {
+  margin: 0;
+  color: #666;
+}
+
+.app-section {
+  margin-bottom: 30px;
+}
+
+.app-section h2 {
+  color: #333;
+  margin-bottom: 20px;
+}
+
+.cal-availability {
+  max-width: 800px;
+  margin: 0 auto;
+  padding: 20px;
+}

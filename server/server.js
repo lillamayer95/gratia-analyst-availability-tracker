@@ -63,7 +63,7 @@ app.post("/api/cal/create-managed-user", async (req, res) => {
 
             // Check if this user already exists in our database
             const existingUser = await query(
-              `SELECT * FROM gratia.call_user_availability WHERE "userId" = $1`,
+              `SELECT * FROM gratia.cal_user_availability WHERE "userId" = $1`,
               [userId]
             );
             console.log("Existing user in our database:", existingUser.rows);
@@ -114,7 +114,7 @@ app.post("/api/cal/create-managed-user", async (req, res) => {
     // Store the data in our database
     const dbResult = await query(
       `
-      INSERT INTO gratia.call_user_availability 
+      INSERT INTO gratia.cal_user_availability 
       ("userId", "refreshToken", "accessToken") 
       VALUES ($1, $2, $3) 
       RETURNING *
@@ -155,7 +155,7 @@ app.get("/api/cal/users/:userId", async (req, res) => {
 
     // Find the user in our database
     const userRecord = await query(
-      `SELECT "userId", "accessToken", "refreshToken", "createdAt", "updatedAt" FROM gratia.call_user_availability WHERE "userId" = $1`,
+      `SELECT "userId", "accessToken", "refreshToken", "availabilityLastUpdated", "createdAt", "updatedAt" FROM gratia.cal_user_availability WHERE "userId" = $1`,
       [parseInt(userId)]
     );
 
@@ -201,7 +201,7 @@ app.get("/api/cal/refresh", async (req, res) => {
 
     // Find the user in our database based on the current access token
     const userRecord = await query(
-      `SELECT * FROM gratia.call_user_availability WHERE "accessToken" = $1`,
+      `SELECT * FROM gratia.cal_user_availability WHERE "accessToken" = $1`,
       [currentAccessToken]
     );
 
@@ -260,7 +260,7 @@ app.get("/api/cal/refresh", async (req, res) => {
     // Update the tokens in our database
     const updateResult = await query(
       `
-      UPDATE gratia.call_user_availability 
+      UPDATE gratia.cal_user_availability 
       SET "accessToken" = $1, "refreshToken" = $2, "updatedAt" = CURRENT_TIMESTAMP
       WHERE "userId" = $3
       RETURNING *
@@ -282,6 +282,53 @@ app.get("/api/cal/refresh", async (req, res) => {
     console.error("Error refreshing token:", err);
     res.status(500).json({
       error: "Internal server error during token refresh",
+      details: err.message,
+    });
+  }
+});
+
+// Update availability last updated timestamp
+app.put("/api/cal/users/:userId/availability-updated", async (req, res) => {
+  try {
+    const { userId } = req.params;
+
+    if (!userId) {
+      return res.status(400).json({
+        error: "Missing required parameter: userId",
+      });
+    }
+
+    // Update the availabilityLastUpdated timestamp in our database
+    const updateResult = await query(
+      `
+      UPDATE gratia.cal_user_availability 
+      SET "availabilityLastUpdated" = CURRENT_TIMESTAMP
+      WHERE "userId" = $1
+      RETURNING "userId", "availabilityLastUpdated", "updatedAt"
+    `,
+      [parseInt(userId)]
+    );
+
+    if (updateResult.rows.length === 0) {
+      return res.status(404).json({
+        error: "User not found with the provided userId",
+      });
+    }
+
+    console.log(
+      "Updated availability timestamp for user:",
+      updateResult.rows[0]
+    );
+
+    res.json({
+      success: true,
+      message: "Availability timestamp updated successfully",
+      data: updateResult.rows[0],
+    });
+  } catch (err) {
+    console.error("Error updating availability timestamp:", err);
+    res.status(500).json({
+      error: "Failed to update availability timestamp",
       details: err.message,
     });
   }
