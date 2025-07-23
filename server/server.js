@@ -1,6 +1,8 @@
 const express = require("express");
 const cors = require("cors");
+const path = require("path");
 const { query } = require("./db");
+const { initializeCronJobs, stopAllCronJobs } = require("./cronJobs");
 require("dotenv").config({ path: "../.env" });
 
 const app = express();
@@ -115,11 +117,11 @@ app.post("/api/cal/create-managed-user", async (req, res) => {
     const dbResult = await query(
       `
       INSERT INTO gratia.cal_user_availability 
-      ("userId", "refreshToken", "accessToken") 
-      VALUES ($1, $2, $3) 
+      ("userId", "email", "refreshToken", "accessToken") 
+      VALUES ($1, $2, $3, $4) 
       RETURNING *
     `,
-      [userId, refreshToken, accessToken]
+      [userId, userData.email, refreshToken, accessToken]
     );
 
     // Return success response
@@ -131,8 +133,6 @@ app.post("/api/cal/create-managed-user", async (req, res) => {
     });
   } catch (err) {
     console.error("Itt dobja creating managed user:", err);
-
-    // Handle 409 conflict in catch block
 
     res.status(500).json({
       error: "Internal server error",
@@ -336,7 +336,22 @@ app.put("/api/cal/users/:userId/availability-updated", async (req, res) => {
 
 app.listen(PORT, () => {
   console.log(`Server is running on port ${PORT}`);
-  console.log(`Visit: http://localhost:${PORT}`);
+
+  // Initialize cron jobs
+  initializeCronJobs();
+});
+
+// Graceful shutdown
+process.on("SIGINT", () => {
+  console.log("\nReceived SIGINT. Graceful shutdown...");
+  stopAllCronJobs();
+  process.exit(0);
+});
+
+process.on("SIGTERM", () => {
+  console.log("\nReceived SIGTERM. Graceful shutdown...");
+  stopAllCronJobs();
+  process.exit(0);
 });
 
 module.exports = app;

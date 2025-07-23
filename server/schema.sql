@@ -10,6 +10,7 @@ CREATE SCHEMA IF NOT EXISTS gratia;
 CREATE TABLE IF NOT EXISTS gratia.cal_user_availability (
     id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
     "userId" INTEGER UNIQUE NOT NULL,
+    "email" VARCHAR(255),
     "refreshToken" TEXT NOT NULL,
     "accessToken" TEXT NOT NULL,
     "availabilityLastUpdated" TIMESTAMP,
@@ -34,3 +35,4 @@ CREATE TRIGGER update_cal_user_availability_updated_at
 
 -- Create indexes for cal_user_availability
 CREATE INDEX IF NOT EXISTS idx_cal_user_availability_userId ON gratia.cal_user_availability("userId");
+CREATE INDEX IF NOT EXISTS idx_cal_user_availability_email ON gratia.cal_user_availability("email");
