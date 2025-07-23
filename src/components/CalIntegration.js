@@ -57,10 +57,6 @@ const CalIntegration = ({ userTokens }) => {
       }}
     >
       <div>
-        <div className="user-info">
-          <h3>Connected User</h3>
-          <p>User ID: {userTokens.userId}</p>
-        </div>
         <div className="app-section">
           <h2>Availability Management</h2>
           <div className="cal-availability">

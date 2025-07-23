@@ -1,7 +1,5 @@
-import React, { useState } from "react";
+import { useState } from "react";
 import "./Onboarding.css";
-
-const API_BASE_URL = "http://localhost:5000";
 
 const Onboarding = ({ onUserCreated }) => {
   const [jsonInput, setJsonInput] = useState("");
@@ -26,7 +24,7 @@ const Onboarding = ({ onUserCreated }) => {
 
       // Call your backend API to create managed user
       const response = await fetch(
-        `${API_BASE_URL}/api/cal/create-managed-user`,
+        `${process.env.REACT_APP_API_BASE_URL}/api/cal/create-managed-user`,
         {
           method: "POST",
           headers: {
