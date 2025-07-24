@@ -1,8 +1,6 @@
 const nodemailer = require("nodemailer");
 require("dotenv").config({ path: "../.env" });
 
-dotenv.config({ path: "../.env" });
-
 const createTransporter = () => {
   return nodemailer.createTransport({
     service: "gmail",
@@ -58,12 +56,12 @@ const sendAvailabilityReminderEmail = async (
     };
 
     const info = await transporter.sendMail(mailOptions);
-    log.info(`Email sent to ${userEmail}: ${info.messageId}`);
+    console.log(`Email sent to ${userEmail}: ${info.messageId}`);
     return { success: true, messageId: info.messageId };
   } catch (error) {
-    log.error(`Failed to send email to ${userEmail}:`, error);
+    console.error(`Failed to send email to ${userEmail}:`, error);
     return { success: false, error: error.message };
   }
 };
 
-export default { sendAvailabilityReminderEmail };
+module.exports = { sendAvailabilityReminderEmail };

@@ -46,8 +46,6 @@ app.post("/api/cal/create-managed-user", async (req, res) => {
     const responseData = await response.json();
 
     if (!response.ok) {
-      log.error("Error from Cal.com:", responseData);
-
       if (
         response.status === 409 &&
         responseData.error?.message?.includes("Existing user ID=")

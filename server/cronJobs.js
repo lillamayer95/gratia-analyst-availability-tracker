@@ -36,9 +36,11 @@ const processUsers = async (users) => {
         ...result,
       });
 
-      log.info(`Email to ${user.email}: ${result.success ? "Sent" : "Failed"}`);
+      console.log(
+        `Email to ${user.email}: ${result.success ? "Sent" : "Failed"}`
+      );
     } catch (error) {
-      log.error(`Error sending email to ${user.email}`, error);
+      console.error(`Error sending email to ${user.email}`, error);
       results.push({
         userId: user.userId,
         email: user.email,
@@ -54,7 +56,7 @@ const processUsers = async (users) => {
 };
 
 const runDailyAvailabilityCheck = async () => {
-  log.info("Running daily availability check...");
+  console.log("Running daily availability check...");
 
   try {
     const users = await query(`
@@ -64,7 +66,7 @@ const runDailyAvailabilityCheck = async () => {
     `);
 
     if (users.rows.length === 0) {
-      log.info("No users need availability reminders today.");
+      console.log("No users need availability reminders today.");
       return;
     }
 
@@ -73,27 +75,27 @@ const runDailyAvailabilityCheck = async () => {
     const successCount = results.filter((r) => r.success).length;
     const failCount = results.length - successCount;
 
-    log.info(`Email summary: ${successCount} sent, ${failCount} failed`);
+    console.log(`Email summary: ${successCount} sent, ${failCount} failed`);
   } catch (error) {
-    log.error("Error in daily availability check cron job", error);
+    console.error("Error in daily availability check cron job", error);
   }
 };
 
 const scheduleDailyAvailabilityCheck = () => {
-  cron.schedule("0 8 * * *", runDailyAvailabilityCheck);
-  log.info("Scheduled daily availability check at 8:00 AM");
+  cron.schedule("0 17 * * *", runDailyAvailabilityCheck);
+  console.log("Scheduled daily availability check at 5:00 PM");
 };
 
 // Public interface
 const initializeCronJobs = () => {
-  log.info("Initializing cron jobs...");
+  console.log("Initializing cron jobs...");
   scheduleDailyAvailabilityCheck();
 };
 
 const stopAllCronJobs = () => {
-  log.info("Stopping all cron jobs...");
+  console.log("Stopping all cron jobs...");
   cron.getTasks().forEach((task) => task.stop());
-  log.info("All cron jobs stopped");
+  console.log("All cron jobs stopped");
 };
 
 module.exports = {
