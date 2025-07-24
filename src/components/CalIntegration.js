@@ -9,21 +9,23 @@ const CalIntegration = () => {
   const [isLoading, setIsLoading] = useState(true);
   const [fetchError, setFetchError] = useState("");
 
-  useEffect(() => {
-    const controller = new AbortController();
-    const fetchToken = async () => {
-      if (!userId) return;
+  const API_BASE = process.env.REACT_APP_API_BASE_URL;
+  const CAL_CLIENT_ID = process.env.REACT_APP_CAL_CLIENT_ID;
+  const CAL_API_URL = process.env.REACT_APP_CAL_API_URL;
 
+  useEffect(() => {
+    if (!userId) return;
+    const controller = new AbortController();
+    const fetchAccessToken = async () => {
       try {
-        const response = await fetch(
-          `${process.env.REACT_APP_API_BASE_URL}/api/cal/users/${userId}`,
-          { signal: controller.signal }
-        );
+        const response = await fetch(`${API_BASE}/api/cal/users/${userId}`, {
+          signal: controller.signal,
+        });
 
         if (!response.ok) throw new Error("Failed to fetch access token");
 
-        const data = await response.json();
-        setAccessToken(data.accessToken);
+        const { accessToken } = await response.json();
+        setAccessToken(accessToken);
       } catch (error) {
         if (error.name !== "AbortError") {
           console.error("Error fetching access token:", error);
@@ -34,20 +36,17 @@ const CalIntegration = () => {
       }
     };
 
-    fetchToken();
+    fetchAccessToken();
     return () => controller.abort();
   }, [userId]);
 
   const handleAvailabilityUpdate = async () => {
     if (!userId) return;
     try {
-      await fetch(
-        `${process.env.REACT_APP_API_BASE_URL}/api/cal/users/${userId}/availability-updated`,
-        {
-          method: "PUT",
-          headers: { "Content-Type": "application/json" },
-        }
-      );
+      await fetch(`${API_BASE}/api/cal/users/${userId}/availability-updated`, {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+      });
     } catch (error) {
       console.error("Error updating availability timestamp:", error);
     }
@@ -59,10 +58,10 @@ const CalIntegration = () => {
   return (
     <CalProvider
       accessToken={accessToken}
-      clientId={process.env.REACT_APP_CAL_CLIENT_ID}
+      clientId={CAL_CLIENT_ID}
       options={{
-        apiUrl: process.env.REACT_APP_CAL_API_URL,
-        refreshUrl: `${process.env.REACT_APP_API_BASE_URL}/api/cal/refresh`,
+        apiUrl: CAL_API_URL,
+        refreshUrl: `${API_BASE}/api/cal/refresh`,
       }}
     >
       <div className="app-section">

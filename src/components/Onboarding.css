@@ -1,70 +1,91 @@
 .onboarding-container {
-  padding: 20px;
-  max-width: 600px;
-  margin: 0 auto;
+  max-width: 500px;
+  margin: 2rem auto;
+  padding: 2rem;
+  border-radius: 12px;
 }
 
 .onboarding-container h1 {
   text-align: center;
-  color: #333;
-  margin-bottom: 30px;
+  color: #2c3e50;
+  font-size: 2rem;
+  margin-bottom: 2rem;
+  font-weight: 600;
 }
 
 .error-message {
-  background-color: #f8d7da;
-  color: #721c24;
-  padding: 12px;
-  border-radius: 4px;
-  margin-bottom: 20px;
-  border: 1px solid #f5c6cb;
+  background-color: #fdf2f2;
+  border: 1px solid #fecaca;
+  color: #dc2626;
+  padding: 1rem;
+  border-radius: 8px;
+  margin-bottom: 1.5rem;
+  font-weight: 500;
 }
 
 .success-message {
-  background-color: #d4edda;
-  color: #155724;
-  padding: 12px;
-  border-radius: 4px;
-  margin-bottom: 20px;
-  border: 1px solid #c3e6cb;
+  background-color: #f0fdf4;
+  border: 1px solid #bbf7d0;
+  color: #059669;
+  padding: 1rem;
+  border-radius: 8px;
+  margin-bottom: 1.5rem;
+  font-weight: 500;
 }
 
 .form-group {
-  margin-bottom: 20px;
+  margin-bottom: 1.5rem;
 }
 
 .form-group label {
   display: block;
-  margin-bottom: 10px;
-  font-weight: bold;
-  color: #555;
+  margin-bottom: 0.5rem;
+  color: #34495e;
+  font-weight: 500;
+  font-size: 0.95rem;
 }
 
-.form-group textarea {
+.form-group input,
+.form-group select {
   width: 100%;
-  padding: 12px;
-  border: 1px solid #ccc;
-  border-radius: 4px;
-  font-family: monospace;
-  font-size: 14px;
-  resize: vertical;
+  padding: 0.875rem 1rem;
+  border: 2px solid #e0e6ed;
+  border-radius: 8px;
+  font-size: 1rem;
+  background-color: #ffffff;
+  transition: all 0.3s ease;
+  box-sizing: border-box;
 }
 
-.form-group textarea:focus {
+.form-group input:focus,
+.form-group select:focus {
   outline: none;
-  border-color: #007bff;
+  border-color: #3498db;
+  box-shadow: 0 0 0 3px rgba(52, 152, 219, 0.1);
+  background-color: #f8fafb;
 }
 
 .register-button {
-  background-color: #007bff;
+  width: 100%;
+  padding: 1rem;
+  background: linear-gradient(135deg, #3498db, #2980b9);
   color: white;
   border: none;
-  padding: 12px 24px;
-  border-radius: 4px;
+  border-radius: 8px;
+  font-size: 1.1rem;
+  font-weight: 600;
   cursor: pointer;
-  font-size: 16px;
-  font-weight: bold;
+  margin-top: 1rem;
 }
 
-.register-button:hover {
-  background-color: #0056b3;
+.register-button:hover:not(:disabled) {
+  background: linear-gradient(135deg, #2980b9, #21618c);
+  box-shadow: 0 4px 15px rgba(52, 152, 219, 0.3);
+}
+
+.register-button:disabled {
+  background: #bdc3c7;
+  cursor: not-allowed;
+  transform: none;
+  box-shadow: none;
 }
