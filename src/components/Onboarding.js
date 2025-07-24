@@ -1,11 +1,13 @@
 import { useState } from "react";
+import { useNavigate } from "react-router-dom";
 import "./Onboarding.css";
 
-const Onboarding = ({ onUserCreated }) => {
+const Onboarding = () => {
   const [jsonInput, setJsonInput] = useState("");
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState("");
   const [success, setSuccess] = useState("");
+  const navigate = useNavigate();
 
   const handleRegister = async () => {
     setIsLoading(true);
@@ -13,50 +15,34 @@ const Onboarding = ({ onUserCreated }) => {
     setSuccess("");
 
     try {
-      // Parse the JSON input
-      let userData;
-      console.log("Received JSON input:", jsonInput);
-      try {
-        userData = JSON.parse(jsonInput);
-      } catch (parseError) {
-        throw new Error("Invalid JSON format. Please check your input.");
-      }
+      const userData = JSON.parse(jsonInput);
 
-      // Call your backend API to create managed user
       const response = await fetch(
         `${process.env.REACT_APP_API_BASE_URL}/api/cal/create-managed-user`,
         {
           method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-          },
+          headers: { "Content-Type": "application/json" },
           body: JSON.stringify(userData),
         }
       );
 
+      const result = await response.json();
+
       if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.error || "Failed to create managed user");
+        throw new Error(result.error || "Failed to create managed user");
       }
 
-      const result = await response.json();
       setSuccess(
         `Managed user created successfully! User ID: ${result.userId}`
       );
-      setJsonInput(""); // Clear the input after success
-
-      // Pass the user data back to parent component
-      if (onUserCreated) {
-        onUserCreated({
-          userId: result.userId,
-          accessToken: result.accessToken,
-          refreshToken: result.refreshToken,
-          id: result.id,
-          createdAt: result.createdAt,
-        });
-      }
+      setJsonInput("");
+      navigate(`/availability/user/${result.userId}`);
     } catch (err) {
-      setError(err.message);
+      const message =
+        err instanceof SyntaxError
+          ? "Invalid JSON format. Please check your input."
+          : err.message || "Something went wrong.";
+      setError(message);
     } finally {
       setIsLoading(false);
     }

@@ -12,6 +12,12 @@ const PORT = process.env.PORT || 5000;
 app.use(cors());
 app.use(express.json());
 
+const CAL_API_BASE = "https://api.cal.com/v2";
+const headers = {
+  "Content-Type": "application/json",
+  "x-cal-secret-key": process.env.CAL_CLIENT_SECRET,
+};
+
 // Cal.com managed user creation endpoint
 app.post("/api/cal/create-managed-user", async (req, res) => {
   try {
@@ -24,60 +30,49 @@ app.post("/api/cal/create-managed-user", async (req, res) => {
       });
     }
 
-    const options = {
-      method: "POST",
-      headers: {
-        "x-cal-secret-key": process.env.CAL_CLIENT_SECRET,
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify(userData),
-    };
-
     // Create managed user in Cal.com
     const response = await fetch(
-      `https://api.cal.com/v2/oauth-clients/${process.env.CAL_CLIENT_ID}/users`,
-      options
+      `${CAL_API_BASE}/oauth-clients/${process.env.CAL_CLIENT_ID}/users`,
+      {
+        method: "POST",
+        headers,
+        body: JSON.stringify(userData),
+      }
     );
 
     let userId, accessToken, refreshToken;
 
     // Read the response body once, regardless of success or error
     const responseData = await response.json();
-    console.log("Response from Cal.com:", responseData);
 
     if (!response.ok) {
-      console.log("Error from Cal.com:", responseData);
+      log.error("Error from Cal.com:", responseData);
 
       if (
         response.status === 409 &&
         responseData.error?.message?.includes("Existing user ID=")
       ) {
-        console.log("Handling 409 conflict");
         try {
           // Extract user ID from the error message
           const userIdMatch = responseData.error.message.match(
             /Existing user ID=(\d+)/
           );
-          console.log("User ID from error message:", userIdMatch);
           if (userIdMatch) {
             userId = parseInt(userIdMatch[1]);
-            console.log(`User already exists with ID: ${userId}`);
-
             // Check if this user already exists in our database
             const existingUser = await query(
               `SELECT * FROM gratia.cal_user_availability WHERE "userId" = $1`,
               [userId]
             );
-            console.log("Existing user in our database:", existingUser.rows);
-
             if (existingUser.rows.length > 0) {
               // User already exists in our database, return existing record
+              const user = existingUser.rows[0];
               return res.status(200).json({
-                id: existingUser.rows[0].id,
+                id: user.id,
                 userId: userId,
-                createdAt: existingUser.rows[0].createdAt,
-                accessToken: existingUser.rows[0].accessToken,
-                refreshToken: existingUser.rows[0].refreshToken,
+                createdAt: user.createdAt,
+                accessToken: user.accessToken,
+                refreshToken: user.refreshToken,
               });
             } else {
               // User exists in Cal.com but not in our database
@@ -106,12 +101,8 @@ app.post("/api/cal/create-managed-user", async (req, res) => {
     }
 
     // Success case - extract user data
-    console.log("Managed user created:", responseData);
     userId = responseData.data.user.id;
     ({ accessToken, refreshToken } = responseData.data);
-    console.log("User ID:", userId);
-    console.log("Access Token:", accessToken);
-    console.log("Refresh Token:", refreshToken);
 
     // Store the data in our database
     const dbResult = await query(
@@ -124,15 +115,16 @@ app.post("/api/cal/create-managed-user", async (req, res) => {
       [userId, userData.email, refreshToken, accessToken]
     );
 
+    const inserted = dbResult.rows[0];
     // Return success response
     res.status(201).json({
       message: "Managed user created successfully",
-      id: dbResult.rows[0].id,
+      id: inserted.id,
       userId: userId,
-      createdAt: dbResult.rows[0].createdAt,
+      createdAt: inserted.createdAt,
     });
   } catch (err) {
-    console.error("Itt dobja creating managed user:", err);
+    console.error("Error creating managed user:", err);
 
     res.status(500).json({
       error: "Internal server error",
@@ -143,20 +135,13 @@ app.post("/api/cal/create-managed-user", async (req, res) => {
 
 // Get user access token by userId endpoint
 app.get("/api/cal/users/:userId", async (req, res) => {
+  const userId = parseInt(req.params.userId);
+  if (!userId) return sendError(res, 400, "Invalid userId parameter");
   try {
-    const { userId } = req.params;
-
-    // Validate userId
-    if (!userId || isNaN(parseInt(userId))) {
-      return res.status(400).json({
-        error: "Invalid userId parameter",
-      });
-    }
-
     // Find the user in our database
     const userRecord = await query(
       `SELECT "userId", "accessToken", "refreshToken", "availabilityLastUpdated", "createdAt", "updatedAt" FROM gratia.cal_user_availability WHERE "userId" = $1`,
-      [parseInt(userId)]
+      [userId]
     );
 
     if (userRecord.rows.length === 0) {
@@ -166,8 +151,6 @@ app.get("/api/cal/users/:userId", async (req, res) => {
     }
 
     const user = userRecord.rows[0];
-    console.log("Found user:", user.userId);
-
     // Return the access token
     res.json({
       userId: user.userId,
@@ -186,23 +169,13 @@ app.get("/api/cal/users/:userId", async (req, res) => {
 
 // Refresh token endpoint for Cal.com atoms
 app.get("/api/cal/refresh", async (req, res) => {
+  const token = req.headers.authorization?.split(" ")[1];
+  if (!token) return sendError(res, 401, "Missing Bearer token");
   try {
-    // Extract the access token from the Authorization header
-    const authHeader = req.headers.authorization;
-    if (!authHeader || !authHeader.startsWith("Bearer ")) {
-      return res.status(401).json({
-        error:
-          "Missing or invalid Authorization header. Expected: Bearer <accessToken>",
-      });
-    }
-
-    const currentAccessToken = authHeader.split(" ")[1];
-    console.log("Received access token for refresh:", currentAccessToken);
-
     // Find the user in our database based on the current access token
     const userRecord = await query(
       `SELECT * FROM gratia.cal_user_availability WHERE "accessToken" = $1`,
-      [currentAccessToken]
+      [token]
     );
 
     if (userRecord.rows.length === 0) {
@@ -212,50 +185,27 @@ app.get("/api/cal/refresh", async (req, res) => {
     }
 
     const user = userRecord.rows[0];
-    console.log("Found user for token refresh:", user);
-    console.log(
-      `https://api.cal.com/v2/oauth-clients/${process.env.CAL_CLIENT_ID}/refresh`
-    );
-    console.log({
-      method: "POST",
-      headers: {
-        "x-cal-secret-key": process.env.CAL_CLIENT_SECRET,
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({
-        refreshToken: user.refreshToken,
-      }),
-    });
 
     // Call Cal.com refresh endpoint
     const refreshResponse = await fetch(
-      `https://api.cal.com/v2/oauth/${process.env.CAL_CLIENT_ID}/refresh`,
+      `${CAL_API_BASE}/oauth/${process.env.CAL_CLIENT_ID}/refresh`,
       {
         method: "POST",
-        headers: {
-          "x-cal-secret-key": process.env.CAL_CLIENT_SECRET,
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          refreshToken: user.refreshToken,
-        }),
+        headers,
+        body: JSON.stringify({ refreshToken: user.refreshToken }),
       }
     );
 
+    const responseData = await refreshResponse.json();
     if (!refreshResponse.ok) {
-      const errorData = await refreshResponse.json();
-      console.error("Cal.com refresh error:", errorData);
+      console.error("Cal.com refresh error:", responseData);
       return res.status(refreshResponse.status).json({
         error: "Failed to refresh token with Cal.com",
-        details: errorData.message || errorData.error,
+        details: responseData.message || responseData.error,
       });
     }
 
-    const refreshData = await refreshResponse.json();
-    console.log("Cal.com refresh successful:", refreshData);
-
-    const { accessToken: newAccessToken, refreshToken: newRefreshToken } =
-      refreshData.data;
+    const { accessToken, refreshToken } = responseData.data;
 
     // Update the tokens in our database
     const updateResult = await query(
@@ -265,18 +215,16 @@ app.get("/api/cal/refresh", async (req, res) => {
       WHERE "userId" = $3
       RETURNING *
     `,
-      [newAccessToken, newRefreshToken, user.userId]
+      [accessToken, refreshToken, user.userId]
     );
 
     if (updateResult.rows.length === 0) {
       throw new Error("Failed to update user tokens in database");
     }
 
-    console.log("Tokens updated successfully for user:", user.userId);
-
     // Return the new access token to the atoms
     res.json({
-      accessToken: newAccessToken,
+      accessToken,
     });
   } catch (err) {
     console.error("Error refreshing token:", err);
@@ -289,15 +237,9 @@ app.get("/api/cal/refresh", async (req, res) => {
 
 // Update availability last updated timestamp
 app.put("/api/cal/users/:userId/availability-updated", async (req, res) => {
+  const userId = parseInt(req.params.userId);
+  if (!userId) return sendError(res, 400, "Missing or invalid userId");
   try {
-    const { userId } = req.params;
-
-    if (!userId) {
-      return res.status(400).json({
-        error: "Missing required parameter: userId",
-      });
-    }
-
     // Update the availabilityLastUpdated timestamp in our database
     const updateResult = await query(
       `
@@ -306,7 +248,7 @@ app.put("/api/cal/users/:userId/availability-updated", async (req, res) => {
       WHERE "userId" = $1
       RETURNING "userId", "availabilityLastUpdated", "updatedAt"
     `,
-      [parseInt(userId)]
+      [userId]
     );
 
     if (updateResult.rows.length === 0) {
@@ -314,12 +256,6 @@ app.put("/api/cal/users/:userId/availability-updated", async (req, res) => {
         error: "User not found with the provided userId",
       });
     }
-
-    console.log(
-      "Updated availability timestamp for user:",
-      updateResult.rows[0]
-    );
-
     res.json({
       success: true,
       message: "Availability timestamp updated successfully",
@@ -341,15 +277,12 @@ app.listen(PORT, () => {
   initializeCronJobs();
 });
 
-// Graceful shutdown
 process.on("SIGINT", () => {
-  console.log("\nReceived SIGINT. Graceful shutdown...");
   stopAllCronJobs();
   process.exit(0);
 });
 
 process.on("SIGTERM", () => {
-  console.log("\nReceived SIGTERM. Graceful shutdown...");
   stopAllCronJobs();
   process.exit(0);
 });
