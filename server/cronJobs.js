@@ -82,8 +82,8 @@ const runDailyAvailabilityCheck = async () => {
 };
 
 const scheduleDailyAvailabilityCheck = () => {
-  cron.schedule("0 17 * * *", runDailyAvailabilityCheck);
-  console.log("Scheduled daily availability check at 5:00 PM");
+  cron.schedule("0 8 * * *", runDailyAvailabilityCheck);
+  console.log("Scheduled daily availability check at 8:00 AM");
 };
 
 // Public interface

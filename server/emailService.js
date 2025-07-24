@@ -39,9 +39,7 @@ const sendAvailabilityReminderEmail = async (
           <p>To ensure your calendar stays accurate and you don't miss any important bookings, please take a moment to update your availability.</p>
           
           <div style="margin: 30px 0;">
-            <a href="https://${
-              process.env.API_BASE_URL
-            }/availability/user/${userId}" 
+            <a href="${process.env.APP_URL}/availability/user/${userId}" 
                style="background-color: #007bff; color: white; padding: 12px 24px; text-decoration: none; border-radius: 5px; display: inline-block;">
               Update My Availability
             </a>
