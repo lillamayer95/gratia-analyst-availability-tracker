@@ -1,70 +1,79 @@
-# Getting Started with Create React App
+## 🔧 Installation & Setup
 
-This project was bootstrapped with [Create React App](https://github.com/facebook/create-react-app).
+### 1. Clone the Repository
 
-## Available Scripts
+```bash
+git clone https://github.com/lillamayer95/gratia-analyst-availability-tracker.git
+cd gratia-analyst-availability-tracker
+```
 
-In the project directory, you can run:
+### 2. Install Dependencies
 
-### `npm start`
+```bash
+npm install
+```
 
-Runs the app in the development mode.\
-Open [http://localhost:3000](http://localhost:3000) to view it in your browser.
+### 3. Set Up PostgreSQL Database
 
-The page will reload when you make changes.\
-You may also see any lint errors in the console.
+Run PostgreSQL using Docker:
 
-### `npm test`
+```bash
+docker run --name gratia-postgres \
+  -e POSTGRES_DB=gratia_availability \
+  -e POSTGRES_USER=gratia_user \
+  -e POSTGRES_PASSWORD=your_secure_password \
+  -p 5432:5432 \
+  -d postgres:15
+```
 
-Launches the test runner in the interactive watch mode.\
-See the section about [running tests](https://facebook.github.io/create-react-app/docs/running-tests) for more information.
+### 4. Initialize Database Schema
 
-### `npm run build`
+```bash
+# Connect to the database and run the schema
+docker exec -i gratia-postgres psql -U gratia_user -d gratia_availability < server/schema.sql
+```
 
-Builds the app for production to the `build` folder.\
-It correctly bundles React in production mode and optimizes the build for the best performance.
+### 5. Environment Configuration
 
-The build is minified and the filenames include the hashes.\
-Your app is ready to be deployed!
+Create a `.env` file in the root directory (see `.env.template` for reference):
 
-See the section about [deployment](https://facebook.github.io/create-react-app/docs/deployment) for more information.
+```bash
+cp .env.template .env
+```
 
-### `npm run eject`
+Edit the `.env` file with your actual values.
 
-**Note: this is a one-way operation. Once you `eject`, you can't go back!**
+### 6. Start the Application
 
-If you aren't satisfied with the build tool and configuration choices, you can `eject` at any time. This command will remove the single build dependency from your project.
+#### Development Mode
 
-Instead, it will copy all the configuration files and the transitive dependencies (webpack, Babel, ESLint, etc) right into your project so you have full control over them. All of the commands except `eject` will still work, but they will point to the copied scripts so you can tweak them. At this point you're on your own.
+```bash
+# Start the React frontend (runs on port 3001)
+npm start
 
-You don't have to ever use `eject`. The curated feature set is suitable for small and middle deployments, and you shouldn't feel obligated to use this feature. However we understand that this tool wouldn't be useful if you couldn't customize it when you are ready for it.
+# In a separate terminal, start the backend server
+cd server
+node server.js
+```
 
-## Learn More
+#### Production Mode
 
-You can learn more in the [Create React App documentation](https://facebook.github.io/create-react-app/docs/getting-started).
+```bash
+# Build the React app
+npm run build
 
-To learn React, check out the [React documentation](https://reactjs.org/).
+# Start the backend server
+cd server
+node server.js
+```
 
-### Code Splitting
+## 🌐 Application URLs
 
-This section has moved here: [https://facebook.github.io/create-react-app/docs/code-splitting](https://facebook.github.io/create-react-app/docs/code-splitting)
+- **Frontend**: http://localhost:3001
+- **Backend API**: http://localhost:5000
+- **Onboarding**: http://localhost:3001/ (root path)
+- **Availability Management**: http://localhost:3001/availability/user/{userId}
 
-### Analyzing the Bundle Size
+```
 
-This section has moved here: [https://facebook.github.io/create-react-app/docs/analyzing-the-bundle-size](https://facebook.github.io/create-react-app/docs/analyzing-the-bundle-size)
-
-### Making a Progressive Web App
-
-This section has moved here: [https://facebook.github.io/create-react-app/docs/making-a-progressive-web-app](https://facebook.github.io/create-react-app/docs/making-a-progressive-web-app)
-
-### Advanced Configuration
-
-This section has moved here: [https://facebook.github.io/create-react-app/docs/advanced-configuration](https://facebook.github.io/create-react-app/docs/advanced-configuration)
-
-### Deployment
-
-This section has moved here: [https://facebook.github.io/create-react-app/docs/deployment](https://facebook.github.io/create-react-app/docs/deployment)
-
-### `npm run build` fails to minify
-
-This section has moved here: [https://facebook.github.io/create-react-app/docs/troubleshooting#npm-run-build-fails-to-minify](https://facebook.github.io/create-react-app/docs/troubleshooting#npm-run-build-fails-to-minify)
+```
